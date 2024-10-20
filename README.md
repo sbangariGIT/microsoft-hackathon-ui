@@ -27,7 +27,7 @@ The **Digital Well-being Activity Report App** is designed to provide users with
 1. **Download the App**
    - On your laptop clone this repository and run the flutter app.
 2. **Grant Permissions**
-   - Enable necessary permissions for taking screenshots stored locally.
+   - Enable necessary permissions for taking screenshots stored locally. Processing is currently using OpenAI but could be changed to run locally.
 
 ### **Usage**
 - **Report Dashboard**: View an overview of your current day’s activity and report.

@@ -54,7 +54,7 @@ class _ScreenshotHomeState extends State<ScreenshotHome> {
     _fetchReports(); // Call the function to fetch reports
     super.initState();
     // Start the periodic timer to take screenshots every 1 minute
-    _timer = Timer.periodic(Duration(minutes: 5), (timer) {
+    _timer = Timer.periodic(Duration(minutes: 1), (timer) {
       takeScreenshot();
     });
   }
@@ -75,124 +75,170 @@ class _ScreenshotHomeState extends State<ScreenshotHome> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Digital Forensic')),
-      body: !fetched_reports ? Center(child: const Text("Fetching your reports")): Row(
-        children: [
-          // Left Sidebar
-          Container(
-            width: 200,
-            color: Colors.grey[200],
-            child: ListView.builder(
-              itemCount: daysOfWeek.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(daysOfWeek[index]),
-                  selected: selectedReport == daysOfWeek[index],
-                  onTap: () {
-                    setState(() {
-                      selectedReport = daysOfWeek[index];
-                    });
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(title: const Text('Tech Usage Report')),
+    body: !fetched_reports 
+        ? Center(child: const CircularProgressIndicator())
+        : Row(
+            children: [
+              // Left Sidebar
+              Container(
+                width: 200,
+                color: Colors.grey[200],
+                child: ListView.builder(
+                  itemCount: daysOfWeek.length,
+                  itemBuilder: (context, index) {
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: ListTile(
+                        title: Text(daysOfWeek[index]),
+                        selected: selectedReport == daysOfWeek[index],
+                        onTap: () {
+                          setState(() {
+                            selectedReport = daysOfWeek[index];
+                          });
+                        },
+                      ),
+                    );
                   },
-                );
-              },
-            ),
-          ),
-          // Right Report Display
-          Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: buildReportContent(reports[selectedReport]),
+                ),
               ),
-            ),
+              // Right Report Display
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: buildReportContent(reports[selectedReport]),
+                  ),
+                ),
+              ),
+            ],
           ),
+  );
+}
+
+// Function to build the report content
+Widget buildReportContent(Map<String, dynamic>? report) {
+  if (report == null) {
+    return const Center(child: Text('No report available.'));
+  }
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        'Content Analysis',
+        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+      ),
+      const SizedBox(height: 10),
+      // TODO: Will add an image of the word cloud here
+      Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(report["content_analysis"]["summary"]),
+        ),
+      ),
+      const SizedBox(height: 20),
+      
+      _buildSectionTitle('Problematic Usage Patterns'),
+      ...report["problematic_usage_patterns"]["issues"]
+          .map<Widget>((issue) => _buildIssueCard(issue))
+          .toList(),
+      const SizedBox(height: 20),
+      
+      _buildSectionTitle('Positive Usage Patterns'),
+      ...report["positive_usage"]["patterns"]
+          .map<Widget>((issue) => _buildPatternCard(issue))
+          .toList(),
+      
+      const SizedBox(height: 20),
+      _buildSectionTitle('Recommendations'),
+      ...report["recommendations"]["suggestions"]
+          .map<Widget>((issue) => _buildRecommendationCard(issue))
+          .toList(),
+    ],
+  );
+}
+
+// Function to build section titles
+Widget _buildSectionTitle(String title) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8.0),
+    child: Row(
+      children: [
+        Icon(Icons.report, size: 20, color: Colors.blue),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        ),
+      ],
+    ),
+  );
+}
+
+// Function to build issue card
+Widget _buildIssueCard(Map<String, dynamic> issue) {
+  return Card(
+    margin: const EdgeInsets.symmetric(vertical: 8.0),
+    child: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            issue["issue"],
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 5),
+          Text(issue["description"]),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
-  // Function to build the report content
-  Widget buildReportContent(Map<String, dynamic>? report) {
-    if (report == null) {
-      return const Center(child: Text('No report available.'));
-    }
+// Function to build pattern card
+Widget _buildPatternCard(Map<String, dynamic> issue) {
+  return Card(
+    margin: const EdgeInsets.symmetric(vertical: 8.0),
+    child: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            issue["pattern"],
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 5),
+          Text(issue["description"]),
+        ],
+      ),
+    ),
+  );
+}
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Content Analysis',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 10),
-        Text(report["content_analysis"]["summary"]),
-        const SizedBox(height: 20),
-        const Text(
-          'Problematic Usage Patterns',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 10),
-        ...report["problematic_usage_patterns"]["issues"]
-            .map<Widget>((issue) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      issue["issue"],
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 5),
-                    Text(issue["description"]),
-                    SizedBox(height: 15),
-                  ],
-                ))
-            .toList(),
-        const SizedBox(height: 20),
-        const Text(
-          'Positive Usage Patterns',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 10),
-        ...report["positive_usage"]["patterns"]
-            .map<Widget>((issue) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      issue["pattern"],
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 5),
-                    Text(issue["description"]),
-                    SizedBox(height: 15),
-                  ],
-                ))
-            .toList(),
-
-        const Text(
-          'Recommendations',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 10),
-        ...report["recommendations"]["suggestions"]
-            .map<Widget>((issue) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      issue["recommendation"],
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 5),
-                    Text(issue["details"]),
-                    SizedBox(height: 15),
-                  ],
-                ))
-            .toList(),
-      ],
-    );
-  }
+// Function to build recommendation card
+Widget _buildRecommendationCard(Map<String, dynamic> issue) {
+  return Card(
+    margin: const EdgeInsets.symmetric(vertical: 8.0),
+    child: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            issue["recommendation"],
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 5),
+          Text(issue["details"]),
+        ],
+      ),
+    ),
+  );
+}
 }

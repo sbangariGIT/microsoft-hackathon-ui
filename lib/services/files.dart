@@ -47,7 +47,6 @@ class ReportFetcher {
     } catch (e) {
       print('Error fetching reports: $e');
     }
-    print(reportsMap);
     return reportsMap;
   }
 }
